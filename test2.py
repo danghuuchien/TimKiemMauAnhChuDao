@@ -52,39 +52,19 @@ def printDominantColor(clusters):
     dominant_color = max(clusters, key=lambda x: len(x.points))
     print(f"Màu chủ đạo - Cụm {clusters.index(dominant_color) + 1}: {dominant_color.returnLocation()}")
 
-# def getColors(filename, colorsWanted, min_diff):
-#     img = Image.open(filename)
-#     img.thumbnail((200, 200))
-#     w, h = img.size
-#     points = getPoints(img)
-#     k = colorsWanted
-#     # khoảng cách tối thiểu để dừng kmeans
-#     min_diff = min_diff
-#     clusters = kmeans(points, k, min_diff)
-#     points = []
-#     for point in clusters:
-#         points.append(point.returnLocation())
-#     printDominantColor(clusters)
-#     return points
-
-
-def printClusterColors(clusters):
-    for i, cluster in enumerate(clusters):
-        print(f"Cụm {i + 1}: {cluster.returnLocation()}")
-
 def getColors(filename, colorsWanted, min_diff):
     img = Image.open(filename)
     img.thumbnail((200, 200))
     w, h = img.size
     points = getPoints(img)
     k = colorsWanted
+    # khoảng cách tối thiểu để dừng kmeans
     min_diff = min_diff
     clusters = kmeans(points, k, min_diff)
     points = []
     for point in clusters:
         points.append(point.returnLocation())
-    printClusterColors(clusters)
-    printDominantColor(clusters)  
+    printDominantColor(clusters)
     return points
 def RGBtoHex(points):
     colors = []
@@ -158,7 +138,7 @@ def drawColors(colors):
                 facecolor=color
             )
         )
-    fig1.savefig('color.png', dpi=90, bbox_inches='tight')
+    fig1.savefig('colors2.png', dpi=90, bbox_inches='tight')
 # Hàm main để chạy ứng dụng
 def main():
     root = tk.Tk()

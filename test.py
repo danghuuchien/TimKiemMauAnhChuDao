@@ -48,29 +48,6 @@ class Cluster(Point):
 
     def returnLocation(self):
         return self.r, self.g, self.b
-def printDominantColor(clusters):
-    dominant_color = max(clusters, key=lambda x: len(x.points))
-    print(f"Màu chủ đạo - Cụm {clusters.index(dominant_color) + 1}: {dominant_color.returnLocation()}")
-
-# def getColors(filename, colorsWanted, min_diff):
-#     img = Image.open(filename)
-#     img.thumbnail((200, 200))
-#     w, h = img.size
-#     points = getPoints(img)
-#     k = colorsWanted
-#     # khoảng cách tối thiểu để dừng kmeans
-#     min_diff = min_diff
-#     clusters = kmeans(points, k, min_diff)
-#     points = []
-#     for point in clusters:
-#         points.append(point.returnLocation())
-#     printDominantColor(clusters)
-#     return points
-
-
-def printClusterColors(clusters):
-    for i, cluster in enumerate(clusters):
-        print(f"Cụm {i + 1}: {cluster.returnLocation()}")
 
 def getColors(filename, colorsWanted, min_diff):
     img = Image.open(filename)
@@ -83,15 +60,15 @@ def getColors(filename, colorsWanted, min_diff):
     points = []
     for point in clusters:
         points.append(point.returnLocation())
-    printClusterColors(clusters)
-    printDominantColor(clusters)  
     return points
+
 def RGBtoHex(points):
     colors = []
     for rgb in points:
         r, g, b = rgb
         colors.append('#%02x%02x%02x' % (int(r), int(g), int(b)))
     return colors
+
 def getPoints(img):
     points = []
     w, h = img.size
@@ -101,9 +78,9 @@ def getPoints(img):
             point = Point(r, g, b)
             points.append(point)
     return points
+
 def kmeans(points, k, min_diff):
     clusters = []
-    # tạo các cụm
     for _ in range(k):
         i = random.randint(0, len(points))
         rR = random.randint(0, 255)
@@ -112,54 +89,60 @@ def kmeans(points, k, min_diff):
         cluster = Cluster(rR, rG, rB, [])
         clusters.append(cluster)
     iteration = 0
-    # bắt đầu thuật toán kmeans
     while True:
         for point in points:
             smallest_distance = float('Inf')
             closest_centroid = 0
-            # duyệt qua từng cụm
             for i in range(k):
                 dist = euclidian(point, clusters[i])
-
                 if dist < smallest_distance:
                     smallest_distance = dist
                     closest_centroid = i
-            # thêm điểm vào cụm gần nhất của nó
             clusters[closest_centroid].addPoint(point)
-        # tính sự khác biệt cho tất cả các trọng tâm
         diff = list(range(k))
-        # tính toán vị trí trọng tâm mới
         for index, centroid in enumerate(clusters):
             diff[index] = centroid.calculateNewPosition()
         total_diff = sum(diff)
         print(f"Iteration {iteration + 1}: Tổng khoảng cách di chuyển = {total_diff}")
         iteration += 1
-        # dừng kmeans
         if total_diff < (min_diff * k):
             break
-    # trả về vị trí cuối cùng của trọng tâm
     return clusters
+
 def euclidian(p1, p2):
     deltaxsquared = (p1.r - p2.r) ** 2
     deltaysquared = (p1.g - p2.g) ** 2
     deltazsquared = (p1.b - p2.b) ** 2
     return (deltaxsquared + deltaysquared + deltazsquared) ** 0.5
+
 def drawColors(colors):
     fig1 = plt.figure()
     ax1 = fig1.add_subplot(111, aspect='equal')
-
-    # vẽ màu
     for index, color in enumerate(colors):
         ax1.add_patch(
             patches.Rectangle(
-                ((index * 1 / len(colors)) + 0, 0),  # x, y
-                1 / len(colors),  # chiều rộng
-                1,  # chiều cao
+                ((index * 1 / len(colors)) + 0, 0),
+                1 / len(colors),
+                1,
                 facecolor=color
             )
         )
-    fig1.savefig('color.png', dpi=90, bbox_inches='tight')
-# Hàm main để chạy ứng dụng
+    fig1.savefig('colors.png', dpi=90, bbox_inches='tight')
+
+def drawImageWithClusters(img, clusters):
+    w, h = img.size
+    new_img = Image.new("RGB", (w, h))
+
+    for x in range(w):
+        for y in range(h):
+            point = Point(*img.getpixel((x, y)))
+            cluster_indices = [cluster.assignPointsToClusters(clusters) for cluster in clusters]
+            cluster_index = cluster_indices.index([i for i, val in enumerate(cluster_indices) if point in val][0])
+            color = (int(clusters[cluster_index].r), int(clusters[cluster_index].g), int(clusters[cluster_index].b))
+            new_img.putpixel((x, y), color)
+
+    new_img.show()
+
 def main():
     root = tk.Tk()
     root.withdraw()
@@ -167,9 +150,16 @@ def main():
     file_path = filedialog.askopenfilename(title="Chọn hình ảnh", filetypes=[("Image files", "*.png;*.jpg;*.jpeg")])
 
     if file_path:
-        colors = getColors(file_path, 3, 0.08)
+        colors = getColors(file_path, 4, 0.08)
         hex_colors = RGBtoHex(colors)
         drawColors(hex_colors)
+
+        img = Image.open(file_path)
+        img.thumbnail((200, 200))
+        points = getPoints(img)
+        clusters = kmeans(points, 4, 0.08)
+
+
 
 if __name__ == "__main__":
     main()
